@@ -44,31 +44,47 @@ def split_nodes_delimitor(old_nodes):
             new_nodes.extend(split_node(node))
         else:
             new_nodes.append(node)
-
     return new_nodes     
 
 def split_node(old_node):
     oldText = old_node.text
     stack = []
+    i = 0
 
-    for i in range(len(oldText)):
-        char = oldText[i]
-        if char in _DELIMITORS:
-            stack.append([char, i])
+    while i < len(oldText):
+        if i + 1 < len(oldText) and oldText[i:i+2] == "**":
+            stack.append(["**", i])
+            i += 2
+            continue
 
+        if oldText[i] in _DELIMITORS:
+            stack.append([oldText[i], i])
+
+        i += 1
+
+            
     size = len(stack)
-    if size % 2 != 0:
+    if size == 0:
+        return [old_node]
+    elif size % 2 != 0:
         raise Exception("This is not propper Markdown syntax")
-    
     new_nodes = []
     new_nodes.append(TextNode(text=oldText[0:stack[0][1]]))
     for i in range(size - 1):
         if stack[i][0] != stack[size - i - 1][0]:
             raise Exception("This is not propper Markdown syntax")
-        new_nodes.append(TextNode(text=oldText[stack[i][1] + 1:stack[i + 1][1]], text_type=_DELIMITORS[stack[i][0]]))
+        text_type = TextType.TEXT
+        if i % 2 == 0:
+            text_type = _DELIMITORS[stack[i][0]]
+        start_delim_len = len(stack[i][0])
+
+        new_nodes.append(TextNode(
+            text=oldText[stack[i][1] + start_delim_len : stack[i + 1][1]],
+            text_type=text_type
+        ))
 
     lastTransform = stack.pop()
     if lastTransform[1] < len(oldText):
-        new_nodes.append(TextNode(text=oldText[lastTransform[1] + 1:]))
+        new_nodes.append(TextNode(text=oldText[lastTransform[1] + len(lastTransform[0]):]))
     
     return new_nodes

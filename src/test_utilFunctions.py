@@ -20,10 +20,10 @@ class TestUtilFunctions(unittest.TestCase):
         ]
         self.assertEqual(new_nodes, expected)
 
-    # def test_no_delimiters(self):
-    #     node = TextNode("Plain text", TextType.TEXT)
-    #     result = split_nodes_delimitor([node])
-    #     self.assertEqual(result, [node])
+    def test_no_delimiters(self):
+        node = TextNode("Plain text", TextType.TEXT)
+        result = split_nodes_delimitor([node])
+        self.assertEqual(result, [node])
 
     def test_single_code_block(self):
         node = TextNode("Text with `code` inside", TextType.TEXT)
@@ -35,15 +35,15 @@ class TestUtilFunctions(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    # def test_single_bold_block(self):
-    #     node = TextNode("This is **bold** text", TextType.TEXT)
-    #     result = split_nodes_delimitor([node])
-    #     expected = [
-    #         TextNode("This is ", TextType.TEXT),
-    #         TextNode("bold", TextType.BOLD),
-    #         TextNode(" text", TextType.TEXT),
-    #     ]
-    #     self.assertEqual(result, expected)
+    def test_single_bold_block(self):
+        node = TextNode("This is **bold** text", TextType.TEXT)
+        result = split_nodes_delimitor([node])
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" text", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
 
     def test_single_italic_block(self):
         node = TextNode("This is _italic_ text", TextType.TEXT)
@@ -85,17 +85,17 @@ class TestUtilFunctions(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
-    # def test_multiple_same_type_delimiters(self):
-    #     node = TextNode("`code1``code2`", TextType.TEXT)
-    #     result = split_nodes_delimitor([node])
-    #     expected = [
-    #         TextNode("", TextType.TEXT),
-    #         TextNode("code1", TextType.CODE),
-    #         TextNode("", TextType.TEXT),
-    #         TextNode("code2", TextType.CODE),
-    #         TextNode("", TextType.TEXT),
-    #     ]
-    #     self.assertEqual(result, expected)
+    def test_multiple_same_type_delimiters(self):
+        node = TextNode("`code1``code2`", TextType.TEXT)
+        result = split_nodes_delimitor([node])
+        expected = [
+            TextNode("", TextType.TEXT),
+            TextNode("code1", TextType.CODE),
+            TextNode("", TextType.TEXT),
+            TextNode("code2", TextType.CODE),
+            TextNode("", TextType.TEXT),
+        ]
+        self.assertEqual(result, expected)
 
     # def test_multiple_different_delimiters(self):
     #     node = TextNode("Mix **bold** and _italic_ plus `code`", TextType.TEXT)
