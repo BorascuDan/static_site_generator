@@ -1,23 +1,31 @@
+from re import split
 from src.textnode import TextType, TextNode
 from src.leafnode import LeafNode
+
 
 def _text(node):
     return LeafNode(value=node.text)
 
+
 def _bold(node):
     return LeafNode(tag="b", value=node.text)
+
 
 def _italic(node):
     return LeafNode(tag="i", value=node.text)
 
+
 def _code(node):
     return LeafNode(tag="code", value=node.text)
+
 
 def _link(node):
     return LeafNode(tag="a", value=node.text, props={"href": node.url})
 
+
 def _image(node):
     return LeafNode(tag="img", value="", props={"src": node.url, "alt": node.text})
+
 
 _DISPATCH = {
     TextType.TEXT: _text,
@@ -28,63 +36,61 @@ _DISPATCH = {
     TextType.IMAGE: _image,
 }
 
+
 def text_node_to_html_node(node):
     try:
         return _DISPATCH[node.text_type](node)
     except KeyError:
         raise ValueError(f"Unhandled TextType: {node.text_type}")
-    
-_DELIMITORS = {'**':TextType.BOLD, '_':TextType.ITALIC, '`':TextType.CODE}
 
-def split_nodes_delimitor(old_nodes):
-    new_nodes = []
-    for i in range(len(old_nodes)):
-        node = old_nodes[i]
-        if node.text_type == TextType.TEXT:
-            new_nodes.extend(split_node(node))
-        else:
-            new_nodes.append(node)
-    return new_nodes     
 
-def split_node(old_node):
-    oldText = old_node.text
-    stack = []
-    i = 0
-
-    while i < len(oldText):
-        if i + 1 < len(oldText) and oldText[i:i+2] == "**":
-            stack.append(["**", i])
-            i += 2
+def split_nodes_delimiter(old_nodes, delimiter, text_type):
+    res = []
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            res.append(node)
             continue
 
-        if oldText[i] in _DELIMITORS:
-            stack.append([oldText[i], i])
+        old_text = None
+        if delimiter == "**":
+            old_text = node.text.replace("**", "*")
+            delimiter = "*"
+        else:
+            old_text = node.text
 
-        i += 1
+        splits = []
+        i = 0
+        while i < len(old_text):
+            if delimiter == "**":
+                if (
+                    i + 1 < len(old_text)
+                    and old_text[i] == "*"
+                    and old_text[i + 1] == "*"
+                ):
+                    splits.append(i)
+                    i += 2
+                    continue
+            else:
+                if old_text[i] == delimiter:
+                    splits.append(i)
+            i += 1
 
-            
-    size = len(stack)
-    if size == 0:
-        return [old_node]
-    elif size % 2 != 0:
-        raise Exception("This is not propper Markdown syntax")
-    new_nodes = []
-    new_nodes.append(TextNode(text=oldText[0:stack[0][1]]))
-    for i in range(size - 1):
-        if stack[i][0] != stack[size - i - 1][0]:
-            raise Exception("This is not propper Markdown syntax")
-        text_type = TextType.TEXT
-        if i % 2 == 0:
-            text_type = _DELIMITORS[stack[i][0]]
-        start_delim_len = len(stack[i][0])
+        if len(splits) % 2 != 0:
+            raise Exception("Not propper markdown")
 
-        new_nodes.append(TextNode(
-            text=oldText[stack[i][1] + start_delim_len : stack[i + 1][1]],
-            text_type=text_type
-        ))
+        new_nodes = []
+        if splits[0] != 0:
+            new_nodes.append(TextNode(old_text[0 : splits[0]], text_type=TextType.TEXT))
 
-    lastTransform = stack.pop()
-    if lastTransform[1] < len(oldText):
-        new_nodes.append(TextNode(text=oldText[lastTransform[1] + len(lastTransform[0]):]))
-    
-    return new_nodes
+        for i in range(len(splits)):
+            curent_text_type = text_type if i % 2 == 0 else TextType.TEXT
+            delim_len = 2 if delimiter == "**" else 1
+            left = splits[i] + delim_len
+            right = splits[i + 1] if i != len(splits) - 1 else len(old_text)
+            if left == right:
+                break
+            new_nodes.append(TextNode(old_text[left:right], text_type=curent_text_type))
+
+        res.extend(new_nodes)
+
+    return res
