@@ -70,6 +70,10 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                     splits.append(i)
             i += 1
 
+        if len(splits) == 0:
+            res.append(node)
+            continue
+
         if len(splits) % 2 != 0:
             raise Exception("Not propper markdown")
 
@@ -141,10 +145,15 @@ def split_nodes_url(old_nodes, url_type):
 
         old_text = node.text
         str_url_tuplet = _EXTRACT_MARKDOW[url_type](old_text)
+        if not len(str_url_tuplet):
+            res.append(node)
+            continue
+
         new_nodes = []
         curent_link = 0
         startIndex = 0
-        for i in range(len(old_text)):
+        i = 0
+        while i < len(old_text):
             if _CONDITION_MAP[url_type](i, old_text, str_url_tuplet, curent_link):
                 if i != 0:
                     new_nodes.append(
@@ -166,6 +175,8 @@ def split_nodes_url(old_nodes, url_type):
                 i += 5 if url_type == "image" else 4
                 curent_link += 1
                 startIndex = i
+            else:
+                i += 1
 
         if startIndex != len(old_text):
             new_nodes.append(TextNode(old_text[startIndex:], text_type=TextType.TEXT))
@@ -181,3 +192,20 @@ def split_nodes_image(old_nodes):
 
 def split_nodes_link(old_nodes):
     return split_nodes_url(old_nodes, "url")
+
+
+_NODE_TYPE_TEXT = {
+    "**": TextType.BOLD,
+    "_": TextType.ITALIC,
+    "`": TextType.CODE,
+}
+
+
+def text_to_textnode(text):
+    old_nodes = [TextNode(text, TextType.TEXT)]
+    for key, value in _NODE_TYPE_TEXT.items():
+        old_nodes = split_nodes_delimiter(old_nodes, key, value)
+
+    old_nodes = split_nodes_image(old_nodes)
+    old_nodes = split_nodes_link(old_nodes)
+    return old_nodes
