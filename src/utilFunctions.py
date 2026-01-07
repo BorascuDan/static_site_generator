@@ -51,12 +51,7 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
             res.append(node)
             continue
 
-        old_text = None
-        if delimiter == "**":
-            old_text = node.text.replace("**", "*")
-            delimiter = "*"
-        else:
-            old_text = node.text
+        old_text = node.text
 
         splits = []
         i = 0
@@ -102,3 +97,87 @@ def extract_markdown_images(text):
 
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+
+def condition_type_a(i, old_text, str_url_tuplet, current_link):
+    return (
+        i < len(old_text) - 2
+        and old_text[i] == "!"
+        and old_text[i + 1] == "["
+        and old_text[i + 2] == str_url_tuplet[current_link][0][0]
+    )
+
+
+def condition_type_b(i, old_text, str_url_tuplet, current_link):
+    return (
+        i < len(old_text) - 1
+        and old_text[i] == "["
+        and old_text[i + 1] == str_url_tuplet[current_link][0][0]
+    )
+
+
+_CONDITION_MAP = {
+    "image": condition_type_a,
+    "url": condition_type_b,
+}
+
+_EXTRACT_MARKDOW = {
+    "image": extract_markdown_images,
+    "url": extract_markdown_links,
+}
+
+_TEXT_TYPE = {
+    "image": TextType.IMAGE,
+    "url": TextType.LINK,
+}
+
+
+def split_nodes_url(old_nodes, url_type):
+    res = []
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            res.append(node)
+            continue
+
+        old_text = node.text
+        str_url_tuplet = _EXTRACT_MARKDOW[url_type](old_text)
+        new_nodes = []
+        curent_link = 0
+        startIndex = 0
+        for i in range(len(old_text)):
+            if _CONDITION_MAP[url_type](i, old_text, str_url_tuplet, curent_link):
+                if i != 0:
+                    new_nodes.append(
+                        TextNode(old_text[startIndex:i], text_type=TextType.TEXT)
+                    )
+                new_nodes.append(
+                    TextNode(
+                        str_url_tuplet[curent_link][0],
+                        text_type=_TEXT_TYPE[url_type],
+                        url=str_url_tuplet[curent_link][1],
+                    )
+                )
+                i = (
+                    i
+                    + len(str_url_tuplet[curent_link][0])
+                    + len(str_url_tuplet[curent_link][1])
+                )
+
+                i += 5 if url_type == "image" else 4
+                curent_link += 1
+                startIndex = i
+
+        if startIndex != len(old_text):
+            new_nodes.append(TextNode(old_text[startIndex:], text_type=TextType.TEXT))
+
+        res.extend(new_nodes)
+
+    return res
+
+
+def split_nodes_image(old_nodes):
+    return split_nodes_url(old_nodes, "image")
+
+
+def split_nodes_link(old_nodes):
+    return split_nodes_url(old_nodes, "url")
