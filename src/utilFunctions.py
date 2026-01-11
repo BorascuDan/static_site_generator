@@ -1,6 +1,6 @@
 import re
-from src.textnode import TextType, TextNode
-from src.leafnode import LeafNode
+from textnode import TextType, TextNode
+from leafnode import LeafNode
 
 
 def _text(node):

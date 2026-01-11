@@ -1,9 +1,9 @@
 from enum import Enum
 import re
 from leafnode import LeafNode
-from src.utilFunctions import text_node_to_html_node, text_to_textnode
-from src.textnode import TextNode, TextType
-from src.parentnode import ParentNode
+from utilFunctions import text_node_to_html_node, text_to_textnode
+from textnode import TextNode, TextType
+from parentnode import ParentNode
 
 
 class BlockType(Enum):
@@ -34,7 +34,7 @@ def block_to_block_type(block):
         return BlockType.HEADING
     if block.startswith("```\n") and block.endswith("```"):
         return BlockType.CODE
-    if re.match(r"^(?:> .*)(?:\n> .*)*$", block):
+    if re.match(r"^(?:>.*)(?:\n>.*)*$", block):
         return BlockType.QUOTE
     if re.match(r"^(?:- .*)(?:\n- .*)*$", block):
         return BlockType.UNORDERED_LIST
