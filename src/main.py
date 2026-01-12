@@ -39,12 +39,28 @@ def generate_page(from_path, template_path, dest_path):
         f.write(page_html)
 
 
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    for entry in os.listdir(dir_path_content):
+        entry_path = os.path.join(dir_path_content, entry)
+        dest_path = os.path.join(dest_dir_path, entry)
+
+        if os.path.isdir(entry_path):
+            os.makedirs(dest_path, exist_ok=True)
+            generate_pages_recursive(entry_path, template_path, dest_path)
+
+        elif entry.endswith(".md"):
+            html_dest_path = dest_path.replace(".md", ".html")
+            generate_page(entry_path, template_path, html_dest_path)
+
+
 def main():
     copy_static_to_public()
-    from_path = os.path.join(BASE_DIR, "..", "content/index.md")
+
+    content_dir = os.path.join(BASE_DIR, "..", "content")
     template_path = os.path.join(BASE_DIR, "..", "template.html")
-    dest_path = os.path.join(BASE_DIR, "..", "public/index.html")
-    generate_page(from_path, template_path, dest_path)
+    public_dir = os.path.join(BASE_DIR, "..", "public")
+
+    generate_pages_recursive(content_dir, template_path, public_dir)
 
 
 if __name__ == "__main__":

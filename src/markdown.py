@@ -70,19 +70,15 @@ _TEXT_TYPE = {
 def block_to_html(block):
     block_type = block_to_block_type(block)
     block_text = None
-    if block_type == BlockType.ORDERED_LIST or block_type == BlockType.UNORDERED_LIST:
+    if block_type in (BlockType.ORDERED_LIST, BlockType.UNORDERED_LIST):
         normalized = block.split("\n")
         block_text = [s[2:].strip() for s in normalized]
-        text_nodes = list(map(text_to_textnode, block_text))
-        html_items = [
-            [
-                LeafNode(tag=_TEXT_TYPE[node.text_type], value=node.text)
-                for node in list_item
-            ]
-            for list_item in text_nodes
-        ]
+        text_nodes_per_item = [text_to_textnode(s) for s in block_text]
 
-        html_nodes = list(map(lambda s: ParentNode(tag="li", children=s), html_items))
+        html_nodes = []
+        for item_nodes in text_nodes_per_item:
+            li_children = [text_node_to_html_node(n) for n in item_nodes]
+            html_nodes.append(ParentNode(tag="li", children=li_children))
     elif block_type == BlockType.CODE:
         block_text = [TextNode(text=block[4 : len(block) - 3], text_type=TextType.CODE)]
         html_nodes = list(map(text_node_to_html_node, block_text))
